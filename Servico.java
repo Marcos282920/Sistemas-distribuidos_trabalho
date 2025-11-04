@@ -22,10 +22,15 @@ public class Servico {
     public double getPreco(){
         return preco;
     }
-
+    
+    @Override
+    public String toString() {
+        return tipo + " (R$ " + preco + ")";
+    }
 
 
 
 
 
 }
+
