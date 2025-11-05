@@ -8,8 +8,7 @@ public class Atendimendo implements Reclamacao {
 
     @Override
     public void Fazer_Reclamacao(Linha linha, String texto_reclamacao) {
-        String texto = "Descrição da Reclamação da Linha " + linha.getNumero();
-        String s = ": " + texto_reclamacao;
+    String texto = "Descrição da Reclamação da Linha " + linha.getNumero() + ": " + texto_reclamacao;       
         reclamacoes.add(texto);
         System.out.println(texto);
     }
@@ -21,4 +20,5 @@ public class Atendimendo implements Reclamacao {
         }
     }
 }
+
 
