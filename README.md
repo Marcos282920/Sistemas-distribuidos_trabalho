@@ -1,7 +1,7 @@
 # Sistema de Telefonia - Trabalho de Sistemas Distribuídos
 
 ## 📋 Descrição
-Sistema de gerenciamento de telefonia com comunicação distribuída usando sockets TCP e streams personalizados.
+Sistema de gerenciamento de telefonia com comunicação distribuída usando sockets TCP, streams personalizados e **serialização de objetos**.
 
 ## 🏗️ Estrutura do Projeto
 
@@ -9,19 +9,20 @@ Sistema de gerenciamento de telefonia com comunicação distribuída usando sock
 src/
 ├── Main.java                      # Menu principal
 ├── TesteSocket.java               # Teste TCP automatizado
-├── ClienteSimples.java            # Cliente simples
 ├── model/                         # POJOs e modelos
 │   ├── Cliente.java              # POJO 1
 │   ├── Fatura.java               # POJO 2
 │   ├── Contrato.java             # POJO 3
 │   ├── Linha.java                # Modelo 1
-│   └── GerenciadorLinhas.java    # Modelo 2
+│   ├── GerenciadorLinhas.java    # Modelo 2
+│   ├── MensagemRequest.java      # Protocolo Request
+│   └── MensagemReply.java        # Protocolo Reply
 ├── stream/                        # Streams customizados
-│   ├── FaturaOutputStream.java   # Subclasse OutputStream ⭐
-│   └── FaturaInputStream.java    
+│   ├── FaturaOutputStream.java   # Subclasse OutputStream
+│   └── FaturaInputStream.java    # Subclasse InputStream
 └── network/                       # Comunicação TCP
-    ├── ServidorTelefonia.java    
-    └── ClienteTelefonia.java     
+    ├── ServidorTelefonia.java    # Servidor com serialização
+    └── ClienteTelefonia.java     # Cliente com serialização
 ```
 
 ## 🚀 Como Executar
@@ -74,12 +75,51 @@ java TesteSocket
 
 ## ✅ Requisitos Atendidos
 
-- ✅ 3 POJOs: Cliente, Fatura, Contrato
+### POJOs e Modelos
+- ✅ 3 POJOs: Cliente, Fatura, Contrato (todos Serializable)
 - ✅ 2 Classes de Modelo: Linha, GerenciadorLinhas
-- ✅ FaturaOutputStream (subclasse de OutputStream)
-- ✅ Teste System.out
-- ✅ Teste FileOutputStream
+
+### Streams Customizados
+- ✅ FaturaOutputStream (subclasse de OutputStream com construtor específico)
+- ✅ FaturaInputStream (subclasse de InputStream)
+
+### Testes de Stream
+- ✅ Teste System.out (console)
+- ✅ Teste FileOutputStream (arquivo)
 - ✅ Teste TCP Socket
+
+### Serialização de Objetos
+- ✅ Cliente **EMPACOTA** request com ObjectOutputStream
+- ✅ Cliente **DESEMPACOTA** reply com ObjectInputStream
+- ✅ Servidor **DESEMPACOTA** request com ObjectInputStream
+- ✅ Servidor **EMPACOTA** reply com ObjectOutputStream
+- ✅ MensagemRequest e MensagemReply como objetos serializáveis
+
+## 📦 Detalhes da Serialização
+
+O sistema implementa empacotamento/desempacotamento de mensagens:
+
+**Cliente:**
+```java
+// EMPACOTA request
+ObjectOutputStream saida = new ObjectOutputStream(socket.getOutputStream());
+saida.writeObject(request);
+
+// DESEMPACOTA reply
+ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
+MensagemReply reply = (MensagemReply) entrada.readObject();
+```
+
+**Servidor:**
+```java
+// DESEMPACOTA request
+ObjectInputStream entrada = new ObjectInputStream(clientSocket.getInputStream());
+MensagemRequest request = (MensagemRequest) entrada.readObject();
+
+// EMPACOTA reply
+ObjectOutputStream saida = new ObjectOutputStream(clientSocket.getOutputStream());
+saida.writeObject(reply);
+```
 
 ## 👥 Autor
 Ulisses - Sistemas Distribuídos 2025

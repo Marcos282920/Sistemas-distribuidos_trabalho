@@ -1,7 +1,7 @@
 package network;
 
 import model.*;
-import stream.FaturaOutputStream;
+import stream.*;
 
 import java.io.*;
 import java.net.*;
@@ -10,7 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Servidor TCP para receber conexões e processar requisições de faturas
+ * Servidor TCP com SERIALIZAÇÃO de objetos
+ * Empacota e desempacota mensagens usando ObjectInputStream/ObjectOutputStream
  */
 public class ServidorTelefonia {
     private static final int PORTA = 5000;
@@ -21,7 +22,7 @@ public class ServidorTelefonia {
         inicializarDados();
         
         System.out.println("╔══════════════════════════════════════════════════╗");
-        System.out.println("║   SERVIDOR DE TELEFONIA - PORTA " + PORTA + "           ║");
+        System.out.println("║   SERVIDOR COM SERIALIZAÇÃO - PORTA " + PORTA + "       ║");
         System.out.println("╚══════════════════════════════════════════════════╝");
         System.out.println("🔌 Aguardando conexões...\n");
 
@@ -31,8 +32,8 @@ public class ServidorTelefonia {
                     Socket clientSocket = serverSocket.accept();
                     System.out.println("✅ Cliente conectado: " + clientSocket.getInetAddress());
                     
-                    // Processar requisição do cliente
-                    processarCliente(clientSocket);
+                    // Processar requisição do cliente com SERIALIZAÇÃO
+                    processarClienteComSerializacao(clientSocket);
                     
                 } catch (IOException e) {
                     System.err.println("❌ Erro ao processar cliente: " + e.getMessage());
@@ -43,45 +44,63 @@ public class ServidorTelefonia {
         }
     }
 
-    private static void processarCliente(Socket clientSocket) {
-        try (BufferedReader entrada = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             OutputStream saida = clientSocket.getOutputStream()) {
+    /**
+     * Processa cliente COM SERIALIZAÇÃO de objetos
+     * DESEMPACOTA a mensagem do cliente e EMPACOTA a resposta
+     */
+    private static void processarClienteComSerializacao(Socket clientSocket) {
+        try {
+            // 1️⃣ DESEMPACOTAMENTO: Receber e desserializar objeto MensagemRequest
+            ObjectInputStream entrada = new ObjectInputStream(clientSocket.getInputStream());
+            MensagemRequest request = (MensagemRequest) entrada.readObject();
             
-            String comando = entrada.readLine();
-            System.out.println("📨 Comando recebido: " + comando);
+            System.out.println("📦 DESEMPACOTANDO request: " + request);
             
-            if ("OBTER_FATURAS".equals(comando)) {
-                // Enviar faturas usando FaturaOutputStream
-                enviarFaturas(saida);
-                System.out.println("📤 Faturas enviadas com sucesso!");
-            } else {
-                String resposta = "ERRO: Comando desconhecido\n";
-                saida.write(resposta.getBytes());
-            }
+            // 2️⃣ PROCESSAR: Executar operação solicitada
+            MensagemReply reply = processarRequest(request);
             
+            System.out.println("� EMPACOTANDO reply: " + reply);
+            
+            // 3️⃣ EMPACOTAMENTO: Serializar e enviar objeto MensagemReply
+            ObjectOutputStream saida = new ObjectOutputStream(clientSocket.getOutputStream());
+            saida.writeObject(reply);
             saida.flush();
-            clientSocket.close();
-            System.out.println("🔌 Conexão encerrada\n");
             
-        } catch (IOException e) {
+            System.out.println("✅ Resposta enviada!\n");
+            
+            clientSocket.close();
+            
+        } catch (IOException | ClassNotFoundException e) {
             System.err.println("❌ Erro na comunicação: " + e.getMessage());
         }
     }
-
-    private static void enviarFaturas(OutputStream destino) throws IOException {
-        Fatura[] faturas = faturasGlobais.toArray(new Fatura[0]);
-        
-        // Criar FaturaOutputStream conforme especificação
-        FaturaOutputStream faturaStream = new FaturaOutputStream(
-            faturas,           // Array de objetos
-            faturas.length,    // Número de objetos
-            20,                // bytes para numeroLinha
-            15,                // bytes para dataVencimento
-            12,                // bytes para valorTotal
-            destino            // OutputStream destino
-        );
-        
-        faturaStream.enviarTodos();
+    
+    /**
+     * Processa a requisição e retorna a resposta
+     */
+    private static MensagemReply processarRequest(MensagemRequest request) {
+        try {
+            switch (request.getOperacao()) {
+                case OBTER_FATURAS:
+                case LISTAR_TODAS:
+                    return new MensagemReply(true, "Faturas obtidas com sucesso", 
+                                            new ArrayList<>(faturasGlobais));
+                    
+                case OBTER_FATURA_POR_LINHA:
+                    List<Fatura> faturasFiltradas = new ArrayList<>();
+                    for (Fatura f : faturasGlobais) {
+                        if (f.getNumeroLinha().equals(request.getNumeroLinha())) {
+                            faturasFiltradas.add(f);
+                        }
+                    }
+                    return new MensagemReply(true, "Faturas encontradas", faturasFiltradas);
+                    
+                default:
+                    return new MensagemReply(false, "Operação não suportada");
+            }
+        } catch (Exception e) {
+            return new MensagemReply(false, "Erro: " + e.getMessage());
+        }
     }
 
     private static void inicializarDados() {

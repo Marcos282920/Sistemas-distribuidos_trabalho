@@ -1,7 +1,7 @@
 package network;
 
 import stream.FaturaInputStream;
-import model.Fatura;
+import model.*;
 
 import java.io.*;
 import java.net.*;
@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Cliente TCP que se conecta ao servidor e recebe faturas
+ * Cliente TCP COM SERIALIZAÇÃO de objetos
+ * Empacota requests e desempacota replies
  */
 public class ClienteTelefonia {
     private static final String HOST = "localhost";
@@ -50,36 +51,64 @@ public class ClienteTelefonia {
         System.out.print("Escolha uma opção: ");
     }
 
+    /**
+     * Solicita faturas com SERIALIZAÇÃO de objetos
+     * EMPACOTA request e DESEMPACOTA reply
+     */
     private static void solicitarFaturasDoServidor() {
         System.out.println("\n🔌 Conectando ao servidor " + HOST + ":" + PORTA + "...");
         
-        try (Socket socket = new Socket(HOST, PORTA);
-             PrintWriter saida = new PrintWriter(socket.getOutputStream(), true);
-             InputStream entrada = socket.getInputStream()) {
-            
+        try {
+            Socket socket = new Socket(HOST, PORTA);
             System.out.println("✅ Conectado ao servidor!");
             
-            // Enviar comando
-            saida.println("OBTER_FATURAS");
-            System.out.println("📨 Comando enviado: OBTER_FATURAS");
+            // 1️⃣ EMPACOTAMENTO: Criar e enviar MensagemRequest
+            MensagemRequest request = new MensagemRequest(MensagemRequest.TipoOperacao.OBTER_FATURAS);
             
-            // Receber faturas usando FaturaInputStream
-            System.out.println("📥 Recebendo faturas...\n");
+            System.out.println("📦 EMPACOTANDO request: " + request);
             
-            FaturaInputStream faturaStream = new FaturaInputStream(entrada);
+            ObjectOutputStream saida = new ObjectOutputStream(socket.getOutputStream());
+            saida.writeObject(request);
+            saida.flush();
             
-            // Exibir o stream diretamente (como vem do servidor)
-            BufferedReader reader = new BufferedReader(new InputStreamReader(entrada));
-            String linha;
-            while ((linha = reader.readLine()) != null) {
-                System.out.println(linha);
+            System.out.println("📨 Request enviado!");
+            
+            // 2️⃣ DESEMPACOTAMENTO: Receber e desserializar MensagemReply
+            ObjectInputStream entrada = new ObjectInputStream(socket.getInputStream());
+            MensagemReply reply = (MensagemReply) entrada.readObject();
+            
+            System.out.println("� DESEMPACOTANDO reply: " + reply);
+            
+            // 3️⃣ EXIBIR: Mostrar resultado
+            if (reply.isSucesso()) {
+                System.out.println("\n✅ " + reply.getMensagem());
+                List<Fatura> faturas = reply.getFaturas();
+                
+                if (faturas != null && !faturas.isEmpty()) {
+                    System.out.println("\n╔══════════════════════════════════════════════════╗");
+                    System.out.println("║              FATURAS RECEBIDAS                   ║");
+                    System.out.println("╚══════════════════════════════════════════════════╝\n");
+                    
+                    for (Fatura f : faturas) {
+                        System.out.println(f);
+                        System.out.println("─────────────────────────────────────────────");
+                    }
+                    System.out.println("\n📊 Total de faturas: " + faturas.size());
+                } else {
+                    System.out.println("ℹ️  Nenhuma fatura disponível");
+                }
+            } else {
+                System.err.println("❌ Erro: " + reply.getMensagem());
             }
             
-            System.out.println("\n✅ Recebimento concluído!");
+            socket.close();
+            System.out.println("\n✅ Conexão encerrada!");
             
         } catch (IOException e) {
             System.err.println("❌ Erro de conexão: " + e.getMessage());
             System.err.println("💡 Certifique-se de que o servidor está rodando!");
+        } catch (ClassNotFoundException e) {
+            System.err.println("❌ Erro ao desserializar resposta: " + e.getMessage());
         }
     }
 }
