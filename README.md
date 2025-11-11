@@ -82,4 +82,5 @@ java TesteSocket
 - ✅ Teste TCP Socket
 
 ## 👥 Autor
-Ulisses - Sistemas Distribuídos 2025
+Ulisses Alves
+Marcos Eduardo 
