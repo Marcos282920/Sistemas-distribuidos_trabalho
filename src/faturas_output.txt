@@ -1,0 +1,37 @@
+========== TRANSMISSÃO DE FATURAS ==========
+Total de objetos: 5
+Formato: [25 bytes | 20 bytes | 15 bytes]
+============================================
+
+--- FATURA #1 ---
+  Número da Linha.: [11987654321              ] (25 bytes)
+  Data Vencimento.: [2025-11-15          ] (20 bytes)
+  Valor Total.....: [125,50         ] (15 bytes)
+  Status..........: EM ABERTO
+
+--- FATURA #2 ---
+  Número da Linha.: [11912345678              ] (25 bytes)
+  Data Vencimento.: [2025-11-20          ] (20 bytes)
+  Valor Total.....: [89,90          ] (15 bytes)
+  Status..........: PAGO
+
+--- FATURA #3 ---
+  Número da Linha.: [21987651234              ] (25 bytes)
+  Data Vencimento.: [2025-11-18          ] (20 bytes)
+  Valor Total.....: [234,75         ] (15 bytes)
+  Status..........: EM ABERTO
+
+--- FATURA #4 ---
+  Número da Linha.: [85988776655              ] (25 bytes)
+  Data Vencimento.: [2025-11-25          ] (20 bytes)
+  Valor Total.....: [67,30          ] (15 bytes)
+  Status..........: EM ABERTO
+
+--- FATURA #5 ---
+  Número da Linha.: [47999887766              ] (25 bytes)
+  Data Vencimento.: [2025-11-22          ] (20 bytes)
+  Valor Total.....: [156,20         ] (15 bytes)
+  Status..........: PAGO
+
+
+========== FIM DA TRANSMISSÃO ==========
