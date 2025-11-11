@@ -122,4 +122,5 @@ saida.writeObject(reply);
 ```
 
 ## 👥 Autor
-Ulisses - Sistemas Distribuídos 2025
+Ulisses Alves
+Marcos Eduardo 
